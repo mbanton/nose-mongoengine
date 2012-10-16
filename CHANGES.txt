@@ -1,0 +1,1 @@
+v1.0.0, Ter Out 16 19:06:32 BRT 2012 -- Initial release.
