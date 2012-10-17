@@ -1,5 +1,5 @@
 ================
-nose-mongoengine
+nose-mongoengine [![Build Status](https://travis-ci.org/mbanton/nose-mongoengine.png)](https://travis-ci.org/mbanton/nose-mongoengine)
 ================
 
 A nose plugin to facilitate the creation of automated tests that access Mongo Engine structures.
@@ -141,17 +141,11 @@ OK
 
 ```
 
-Todo
-====
-
- - create automated tests
- - continuous integration with Travis ( http://travis-ci.org/ )
-
 Authors
 =======
 
 Marcelo Anton ( https://github.com/mbanton/ )
-
+Maxwell Dayvson ( https://github.com/dayvson/)
 
 Thanks to original author of mongonose: Kapil Thangavelu
 
