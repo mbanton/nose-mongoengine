@@ -1,1 +1,2 @@
+v0.2.0, Qua Out 17 16:36:55 BRT 2012 -- Added some test cases and stop to use pymongo to drop database. Improvements in code style checked on pep8 and pylint
 v0.1.0, Ter Out 16 19:06:32 BRT 2012 -- Initial release.
