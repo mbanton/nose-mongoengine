@@ -12,30 +12,31 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+"""
+ nose plugin to facilitate the creation of automated tests that access Mongo
+ Engine structures.
+"""
 import os
 import shutil
 import socket
-import subprocess
 import sys
 import tempfile
 import time
-import random
-import string
+import uuid
 import inspect
+import subprocess
 
+from subprocess import Popen
 from nose.plugins import Plugin
 from mongoengine.connection import connect
-from pymongo.connection import Connection
-from pymongo.database import Database
-from pymongo.errors import OperationFailure
 
 
 def scan_path(executable="mongod"):
     """Scan the path for a binary.
     """
-    for p in os.environ.get("PATH", "").split(":"):
-        p = os.path.abspath(p)
-        executable_path = os.path.join(p, executable)
+    for path in os.environ.get("PATH", "").split(":"):
+        path = os.path.abspath(path)
+        executable_path = os.path.join(path, executable)
         if os.path.exists(executable_path):
             return executable_path
 
@@ -59,15 +60,14 @@ class MongoEnginePlugin(Plugin):
 
     def __init__(self):
         super(MongoEnginePlugin, self).__init__()
-        self.mongodb_bin = None
-        self.db_port = None
-        self.db_path = None
+        self.mongodb_param = {}
         self.process = None
         self._running = False
-        self._enabled = False
-        self.mongo_database = None
+        self.database_name = None
+        self.connection = None
+        self.clear_context = {}
 
-    def options(self, parser, env={}):
+    def options(self, parser, env=None):
         parser.add_option(
             "--mongoengine",
             action="store_true",
@@ -131,61 +131,60 @@ class MongoEnginePlugin(Plugin):
             return
 
         if not options.mongodb_bin:
-            self.mongodb_bin = scan_path()
-            if self.mongodb_bin is None:
+            self.mongodb_param['mongodb_bin'] = scan_path()
+            if self.mongodb_param['mongodb_bin'] is None:
                 raise AssertionError(
                     "Mongodb plugin enabled, but no mongod on path, "
                     "please specify path to binary\n"
                     "ie. --mongodb=/path/to/mongod")
         else:
-            self.mongodb_bin = os.path.abspath(
+            self.mongodb_param['mongodb_bin'] = os.path.abspath(
                 os.path.expanduser(os.path.expandvars(options.mongodb_bin)))
-            if not os.path.exists(self.mongodb_bin):
+            if not os.path.exists(self.mongodb_param['mongodb_bin']):
                 raise AssertionError(
-                    "Invalid mongodb binary %r" % self.mongodb_bin)
-
-        self._enabled = True
+                    "Invalid mongodb binary %r" % \
+                    self.mongodb_param['mongodb_bin'])
 
         # Its necessary to enable in nose
         self.enabled = True
 
-        self.db_log_path = os.path.expandvars(os.path.expanduser(
+        db_log_path = os.path.expandvars(os.path.expanduser(
             options.mongodb_logpath))
         try:
-            fh = open(self.db_log_path, "w")
-            fh.close()
-        except Exception, e:
-            raise AssertionError("Invalid log path %r" % e)
+            db_file = open(db_log_path, "w")
+            db_file.close()
+        except Exception, exc:
+            raise AssertionError("Invalid log path %r" % exc)
 
         if not options.mongodb_port:
-            self.db_port = get_open_port()
+            self.mongodb_param['db_port'] = get_open_port()
         else:
-            self.db_port = options.mongodb_port
-        self.db_prealloc = options.mongodb_prealloc
-        self.db_scripting = options.mongodb_scripting
+            self.mongodb_param['db_port'] = options.mongodb_port
 
-        self.clear_after_module = options.mongoengine_clear_after_module
-        self.clear_after_class = options.mongoengine_clear_after_class
+        db_prealloc = options.mongodb_prealloc
+        db_scripting = options.mongodb_scripting
+
+        self.clear_context['module'] = options.mongoengine_clear_after_module
+        self.clear_context['class'] = options.mongoengine_clear_after_class
 
         # generate random database name
-        char_set = string.ascii_uppercase + string.digits
-        self.mongo_database = ''.join(random.sample(char_set, 10))
+        self.database_name = str(uuid.uuid1())
 
         #########################################
         # Start a instance of mongo
         #########################################
 
         # Stores data here
-        self.db_path = tempfile.mkdtemp()
-        if not os.path.exists(self.db_path):
-            os.mkdir(self.db_path)
+        self.mongodb_param['db_path'] = tempfile.mkdtemp()
+        if not os.path.exists(self.mongodb_param['db_path']):
+            os.mkdir(self.mongodb_param['db_path'])
 
         args = [
-            self.mongodb_bin,
+            self.mongodb_param['mongodb_bin'],
             "--dbpath",
-            self.db_path,
+            self.mongodb_param['db_path'],
             "--port",
-            str(self.db_port),
+            str(self.mongodb_param['db_port']),
             # don't flood stdout, we're not reading it
             "--quiet",
             # save the port
@@ -199,66 +198,47 @@ class MongoEnginePlugin(Plugin):
             "--nojournal",
             # Default is /dev/null
             "--logpath",
-            self.db_log_path,
-            "-vvvvvvvvvvv"
+            db_log_path,
+            "-vvvvv"
             ]
 
-        if not self.db_prealloc:
+        if not db_prealloc:
             args.append("--noprealloc")
 
-        if not self.db_scripting:
+        if not db_scripting:
             args.append("--noscripting")
 
-        self.process = subprocess.Popen(
+        self.process = Popen(
             args,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
             )
 
         self._running = True
-        os.environ["TEST_MONGODB"] = "localhost:%s" % self.db_port
-        os.environ["TEST_MONGODB_DATABASE"] = self.mongo_database
+        os.environ["TEST_MONGODB"] = "localhost:%s" % \
+                                     self.mongodb_param['db_port']
+        os.environ["TEST_MONGODB_DATABASE"] = self.database_name
 
         # Give a moment for mongodb to finish coming up
         time.sleep(0.3)
 
         # Connecting using mongoengine
-        connect(self.mongo_database, host="localhost", port=self.db_port)
+        self.connection = connect(self.database_name, host="localhost",
+                port=self.mongodb_param['db_port'])
 
     def stopContext(self, context):
         """Clear the database if so configured for this
         """
 
         # Use pymongo directly to drop all collections of created db
-        if self.clear_after_module and inspect.ismodule(context):
-            c = Connection(host='localhost', port=self.db_port)
-            d = Database(c, self.mongo_database)
-            for col in d.collection_names():
-                # Exception OperationFailure is raised
-                # on attempt to drop system collection
-                # it's ok
-                try:
-                    d.drop_collection(col)
-                except OperationFailure, e:
-                    pass
-            c.close()
-
-        if self.clear_after_class and inspect.isclass(context):
-            c = Connection(host='localhost', port=self.db_port)
-            d = Database(c, self.mongo_database)
-            for col in d.collection_names():
-                # Exception OperationFailure is raised
-                # on attempt to drop system collection
-                # it's ok
-                try:
-                    d.drop_collection(col)
-                except OperationFailure, e:
-                    pass
-            c.close()
+        if ((self.clear_context['module'] and inspect.ismodule(context)) or
+           (self.clear_context['class'] and inspect.isclass(context))):
+            self.connection.drop_database(self.database_name)
 
     def finalize(self, result):
         """Stop the mongodb instance.
         """
+
         if not self._running:
             return
 
@@ -274,5 +254,5 @@ class MongoEnginePlugin(Plugin):
         self.process.wait()
 
         # Clean out the test data.
-        shutil.rmtree(self.db_path)
+        shutil.rmtree(self.mongodb_param['db_path'])
         self._running = False
