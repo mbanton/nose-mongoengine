@@ -22,7 +22,7 @@ Using pip:
     pip install nose-mongoengine
 
 Configuration
-=====
+=============
 
 The plugin extends the nose options with a few options. The only
 required options are either ``--mongoengine`` or ``--mongoengine-mongodb-bin`` to enable
@@ -56,7 +56,7 @@ The plugin will up a instance of Mongo Db and create a empty database to use it.
 
 
 Usage in your test cases
-=====
+========================
 
 Since this is your model using mongoengine ( model_one.py )::
 
