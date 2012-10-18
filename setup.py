@@ -29,16 +29,15 @@ setup(name='nose-mongoengine',
       author_email='marceloanton@gmail.com',
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      url='https://github.com/mbanton/nose-mongoengine/',
-      download_url='https://github.com/mbanton/nose-mongoengine/tarball/master',
+      url='http://github.com/mbanton/nose-mongoengine/',
+      download_url='http://github.com/mbanton/nose-mongoengine/tarball/master',
       license='BSD-derived',
       packages=find_packages(exclude=('tests',)),
       install_requires=["nose", "mongoengine"],
       include_package_data=True,
       zip_safe=True,
       platforms=['any'],
-      entry_points = {
+      entry_points={
         'nose.plugins': ['mongoengine = nose_mongoengine:MongoEnginePlugin'],
       },
 )
-

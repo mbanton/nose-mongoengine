@@ -5,8 +5,9 @@ is active. """
 from model_one import ModelOne
 from nose.tools import assert_equals
 
+
 class TestModelOneEmpty(object):
-    """ Test if database is clear. 
+    """ Test if database is clear.
         The option mongoengine-clear-after-module is active. """
 
     def test_match_with_value1(self):

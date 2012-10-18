@@ -6,6 +6,7 @@ from nose.tools import assert_equals
 
 OBJ1_ID, OBJ2_ID = None, None
 
+
 class TestModelOne(object):
     """ Test all methods on ModelOne """
 
@@ -52,8 +53,9 @@ class TestModelOne(object):
         assert_equals(len(find), 1)
         assert_equals(find[0].id, self.obj1_id)
 
+
 class TestModelOneStep2(object):
-    """ Test if database is clear. 
+    """ Test if database is clear.
         The option mongoengine-clear-after-class is active. """
 
     def test_match_with_value1(self):
