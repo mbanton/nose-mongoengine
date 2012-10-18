@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-DESCRIPTION = """A nose plugin to facilitate the creation of automated
-tests that access Mongo Engine structures."""
+DESCRIPTION = 'A nose plugin to facilitate the creation of automated tests' +\
+              ' that access Mongo Engine structures.'
 
 f = open("README.rst")
 try:
