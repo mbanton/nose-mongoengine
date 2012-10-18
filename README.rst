@@ -6,7 +6,6 @@ nose-mongoengine
 :Repository: https://github.com/mbanton/nose-mongoengine/
 :PyPI page: http://pypi.python.org/pypi/nose-mongoengine/
 :Author: Marcelo Anton (http://github.com/mbanton) & Maxwell Dayvson ( https://github.com/dayvson/)
-:Maintainer: Ross Lawley (http://github.com/rozza)
 
 .. image:: https://secure.travis-ci.org/mbanton/nose-mongoengine.png?branch=master
   :target: http://travis-ci.org/mbanton/nose-mongoengine
