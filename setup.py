@@ -23,7 +23,7 @@ CLASSIFIERS = [
 
 
 setup(name='nose-mongoengine',
-      version="0.2.0",
+      version="0.2.1",
       classifiers=CLASSIFIERS,
       author='Marcelo Anton',
       author_email='marceloanton@gmail.com',
