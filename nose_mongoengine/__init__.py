@@ -134,9 +134,9 @@ class MongoEnginePlugin(Plugin):
             self.mongodb_param['mongodb_bin'] = scan_path()
             if self.mongodb_param['mongodb_bin'] is None:
                 raise AssertionError(
-                    "Mongodb plugin enabled, but no mongod on path, "
+                    "Mongoengine plugin enabled, but no mongod on path, "
                     "please specify path to binary\n"
-                    "ie. --mongodb=/path/to/mongod")
+                    "ie. --mongoengine-mongodb=/path/to/mongod")
         else:
             self.mongodb_param['mongodb_bin'] = os.path.abspath(
                 os.path.expanduser(os.path.expandvars(options.mongodb_bin)))
