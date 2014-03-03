@@ -153,7 +153,7 @@ class MongoEnginePlugin(Plugin):
         try:
             db_file = open(db_log_path, "w")
             db_file.close()
-        except Exception, exc:
+        except Exception as exc:
             raise AssertionError("Invalid log path %r" % exc)
 
         if not options.mongodb_port:
